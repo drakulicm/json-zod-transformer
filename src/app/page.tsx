@@ -1,7 +1,7 @@
-import Image from "next/image";
+import Image from "next/image"
 
 const Home = () => {
-  return <main>Hello world</main>;
-};
+  return <main className="era p-4 pl-2">Hello world</main>
+}
 
-export default Home;
+export default Home
