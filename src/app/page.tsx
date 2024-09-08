@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react"
 import camelcaseKeysDeep from "camelcase-keys-deep"
-import { generate } from "ts-to-zod"
 
 import { Textarea } from "@/components/ui/textarea"
 
@@ -47,27 +46,32 @@ const Home = () => {
     }
   }
 
-  const tsToZod = (ts: string) => {
+  const tsToZod = async (ts: string) => {
     try {
-      const { getZodSchemasFile, getIntegrationTestFile, errors } = generate({
-        sourceText: ts,
+      const response = await fetch("/api", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: ts,
       })
-      if (errors.length > 0) {
-        return errors.join("\n")
+      const data = await response.json()
+
+      if (data.error) {
+        throw new Error(data.error)
       }
 
-      const zodSchema = getZodSchemasFile("Root")
-      return zodSchema
+      return data.schema
     } catch (error) {
       return error instanceof Error ? error.message : String(error)
     }
   }
 
   useEffect(() => {
-    const timer = setTimeout(() => {
+    const timer = setTimeout(async () => {
       const json = camelCaseJson(input)
       const ts = jsonToTs(json)
-      const zod = tsToZod(ts)
+      const zod = await tsToZod(ts)
       setOutput(zod)
     }, 500)
 
