@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import camelcaseKeysDeep from "camelcase-keys-deep"
+import { generate } from "ts-to-zod"
 
 import { Textarea } from "@/components/ui/textarea"
 
@@ -15,13 +16,55 @@ const Home = () => {
       const camelCaseJson = camelcaseKeysDeep(parsedJson)
       return JSON.stringify(camelCaseJson, null, 2)
     } catch (error) {
-      return error.message
+      return error instanceof Error ? error.message : String(error)
+    }
+  }
+
+  const jsonToTs = (json: string) => {
+    try {
+      const parsedJson = JSON.parse(json)
+
+      const generateType = (obj: any, indent = 2): string => {
+        const lines = Object.entries(obj).map(([key, value]) => {
+          const type = typeof value
+          if (type === "object" && value !== null) {
+            return `${key}: ${generateType(value, indent + 2)};`
+          } else {
+            return `${key}: ${type};`
+          }
+        })
+
+        return `{\n${lines.map((line) => " ".repeat(indent) + line).join("\n")}\n${" ".repeat(indent - 2)}}`
+      }
+
+      return `type Root = ${generateType(parsedJson)}`
+    } catch (error) {
+      return error instanceof Error ? error.message : String(error)
+    }
+  }
+
+  const tsToZod = (ts: string) => {
+    try {
+      const { getZodSchemasFile, getIntegrationTestFile, errors } = generate({
+        sourceText: ts,
+      })
+      if (errors.length > 0) {
+        return errors.join("\n")
+      }
+
+      const zodSchema = getZodSchemasFile("Root")
+      return zodSchema
+    } catch (error) {
+      return error instanceof Error ? error.message : String(error)
     }
   }
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setOutput(camelCaseJson(input))
+      const json = camelCaseJson(input)
+      const ts = jsonToTs(json)
+      const zod = tsToZod(ts)
+      setOutput(zod)
     }, 500)
 
     return () => clearTimeout(timer)
