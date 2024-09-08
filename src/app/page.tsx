@@ -24,17 +24,21 @@ const Home = () => {
     try {
       const parsedJson = JSON.parse(json)
 
-      const generateType = (obj: any, indent = 2): string => {
-        const lines = Object.entries(obj).map(([key, value]) => {
-          const type = typeof value
-          if (type === "object" && value !== null) {
-            return `${key}: ${generateType(value, indent + 2)};`
-          } else {
-            return `${key}: ${type};`
+      const generateType = (value: any, indent = 2): string => {
+        if (Array.isArray(value)) {
+          if (value.length === 0) {
+            return "any[]"
           }
-        })
-
-        return `{\n${lines.map((line) => " ".repeat(indent) + line).join("\n")}\n${" ".repeat(indent - 2)}}`
+          const itemType = generateType(value[0], indent)
+          return `${itemType}[]`
+        } else if (typeof value === "object" && value !== null) {
+          const lines = Object.entries(value).map(([key, val]) => {
+            return `${key}: ${generateType(val, indent + 2)};`
+          })
+          return `{\n${lines.map((line) => " ".repeat(indent) + line).join("\n")}\n${" ".repeat(indent - 2)}}`
+        } else {
+          return typeof value
+        }
       }
 
       return `type Root = ${generateType(parsedJson)}`
