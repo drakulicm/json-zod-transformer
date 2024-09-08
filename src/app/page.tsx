@@ -15,8 +15,7 @@ const Home = () => {
       const camelCaseJson = camelcaseKeysDeep(parsedJson)
       return JSON.stringify(camelCaseJson, null, 2)
     } catch (error) {
-      console.log("error", error)
-      return "Invalid JSON"
+      return error.message
     }
   }
 
